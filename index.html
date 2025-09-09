@@ -21,8 +21,8 @@
 <body>
   <div id="gate" class="wrap">
     <div class="card">
-      <h1>Password Required</h1>
-      <p class="muted">Enter view or edit password</p>
+      <h1>Enter password</h1>
+      <p class="muted">Use view or edit password</p>
       <input id="gateInput" type="password" placeholder="Password" />
       <button id="gateBtn" class="btn-primary">Unlock</button>
       <p id="gateMsg" class="muted"></p>
@@ -35,10 +35,37 @@
       <form id="iceForm">
         <label>Full name<input id="fullName" /></label>
         <label>Date of birth<input id="dob" type="date" /></label>
-        <label>Blood type<select id="blood"><option value="">Select</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select></label>
+        <label>Address<input id="address" /></label>
+        <label>Phone number<input id="phone" /></label>
+        <label>Email<input id="email" type="email" /></label>
+
+        <h2>Emergency Contact</h2>
+        <label>Contact name<input id="ecName" /></label>
+        <label>Relationship<input id="ecRel" /></label>
+        <label>Phone<input id="ecPhone" /></label>
+        <label>Alternate phone<input id="ecAlt" /></label>
+
+        <h2>Medical Information</h2>
+        <label>Blood type<select id="blood"><option value="">Select</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option><option>Unknown</option></select></label>
         <label>Allergies<textarea id="allergies"></textarea></label>
         <label>Medications<textarea id="meds"></textarea></label>
         <label>Medical conditions<textarea id="conditions"></textarea></label>
+        <label>Primary care physician<input id="pcp" placeholder="Name, phone"/></label>
+        <label>Specialist(s)<input id="specialists" placeholder="Name(s), phone(s)"/></label>
+        <label>Past surgeries / history<textarea id="history"></textarea></label>
+
+        <h2>Insurance & ID</h2>
+        <label>Insurance provider<input id="insProvider"/></label>
+        <label>Policy number<input id="policy"/></label>
+        <label>ID / Driver’s license<input id="dl"/></label>
+        <label>Preferred hospital<input id="hospital"/></label>
+
+        <h2>Directives & Other</h2>
+        <label>Advance directive / DNR<input id="dnr"/></label>
+        <label>Organ donor<select id="donor"><option value="">Select</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
+        <label>Special needs<textarea id="needs"></textarea></label>
+        <label>Pets / dependents<textarea id="pets"></textarea></label>
+        <label>Notes<textarea id="notes"></textarea></label>
       </form>
       <button id="saveBtn" class="btn-primary">Save</button>
     </div>
@@ -46,8 +73,8 @@
 
 <script>
 (function(){
-  const VIEW_PASSWORD = "view123";   // change this
-  const EDIT_PASSWORD = "edit123";   // change this
+  const VIEW_PASSWORD = "view123";
+  const EDIT_PASSWORD = "edit123";
   const STORAGE_KEY = "ice_sheet";
   let canEdit = false;
 
@@ -58,42 +85,46 @@
   const gateMsg = document.getElementById('gateMsg');
 
   const saveBtn = document.getElementById('saveBtn');
-  const ids = ['fullName','dob','blood','allergies','meds','conditions'];
+  const ids = ['fullName','dob','address','phone','email','ecName','ecRel','ecPhone','ecAlt','blood','allergies','meds','conditions','pcp','specialists','history','insProvider','policy','dl','hospital','dnr','donor','needs','pets','notes'];
   const nodes = Object.fromEntries(ids.map(id=>[id,document.getElementById(id)]));
 
-  gateBtn.addEventListener('click',()=>{
-    const pw = gateInput.value;
-    if(pw===VIEW_PASSWORD || pw===EDIT_PASSWORD){
-      canEdit = (pw===EDIT_PASSWORD);
-      unlock();
-    } else {
-      gateMsg.textContent = 'Incorrect password';
-    }
-  });
+  function applyEditability(){
+    ids.forEach(id=>{
+      const el = nodes[id];
+      if(!el) return;
+      if(canEdit){ el.removeAttribute('disabled'); }
+      else { el.setAttribute('disabled','disabled'); }
+    });
+    saveBtn.style.display = canEdit ? '' : 'none';
+  }
+
   function unlock(){
     gate.classList.add('hidden');
     app.classList.remove('hidden');
     load();
-    if(!canEdit){
-      ids.forEach(id=>nodes[id].setAttribute('disabled','disabled'));
-      saveBtn.style.display='none';
-    }
+    applyEditability();
   }
 
+  gateBtn.addEventListener('click',()=>{
+    const pw = gateInput.value.trim();
+    if(pw===VIEW_PASSWORD){ canEdit=false; unlock(); }
+    else if(pw===EDIT_PASSWORD){ canEdit=true; unlock(); }
+    else { gateMsg.textContent = 'Incorrect password'; }
+  });
+  gateInput.addEventListener('keydown',e=>{ if(e.key==='Enter'){ gateBtn.click(); }});
+
   function save(){
-    const data={};
-    ids.forEach(id=>data[id]=nodes[id].value);
+    const data={}; ids.forEach(id=>data[id]=nodes[id].value);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   }
   function load(){
+    const raw = localStorage.getItem(STORAGE_KEY); if(!raw) return;
     try{
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if(!raw) return;
       const data = JSON.parse(raw);
       ids.forEach(id=>{ if(data[id]) nodes[id].value=data[id]; });
     }catch(e){}
   }
-  saveBtn.addEventListener('click',()=>{ save(); alert('Saved'); });
+  saveBtn.addEventListener('click',()=>{ if(canEdit){ save(); alert('Saved'); } });
 })();
 </script>
 </body>
