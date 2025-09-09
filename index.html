@@ -9,13 +9,22 @@
     .wrap{max-width:900px;margin:0 auto;padding:24px}
     .card{background:#111827;border-radius:10px;padding:20px;box-shadow:0 5px 20px #0007}
     h1{margin-top:0}
+    h2{margin:16px 0 8px;font-size:16px;color:#cbd5e1}
     label{display:block;margin:8px 0 4px}
     input,textarea,select{width:100%;padding:8px;border-radius:6px;border:1px solid #334155;background:#0b1220;color:#e5e7eb}
     button{margin-top:12px;padding:10px 14px;border:none;border-radius:6px;cursor:pointer}
     .btn-primary{background:#2563eb;color:#fff}
     .btn-danger{background:#b91c1c;color:#fff}
+    .btn-ghost{background:#0b1220;border:1px solid #334155;color:#e5e7eb}
     .muted{color:#94a3b8;font-size:14px}
     .hidden{display:none}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+    /* Photo styles */
+    .photo-wrap{display:flex;gap:12px;align-items:flex-start}
+    .photo{width:140px;height:140px;border-radius:10px;border:1px solid #334155;background:#0b1220;object-fit:cover}
+    .photo-ctls{display:flex;flex-direction:column;gap:8px}
+    .note{font-size:12px;color:#94a3b8;margin-top:6px}
   </style>
 </head>
 <body>
@@ -32,37 +41,69 @@
   <div id="app" class="wrap hidden">
     <div class="card">
       <h1>In Case of Emergency (ICE)</h1>
+
+      <!-- Photo Section -->
+      <h2>Photo</h2>
+      <div class="photo-wrap">
+        <img id="photoPreview" class="photo" alt="ICE photo preview" />
+        <div class="photo-ctls">
+          <input id="photoFile" type="file" accept="image/*" class="" />
+          <div style="display:flex;gap:8px">
+            <button id="photoClear" class="btn-ghost">Remove photo</button>
+            <button id="photoDownload" class="btn-ghost">Download photo</button>
+          </div>
+          <div class="note">Stored locally in your browser. Max side 1024px. JPEG ~85% quality.</div>
+        </div>
+      </div>
+
       <form id="iceForm">
-        <label>Full name<input id="fullName" /></label>
-        <label>Date of birth<input id="dob" type="date" /></label>
-        <label>Address<input id="address" /></label>
-        <label>Phone number<input id="phone" /></label>
+        <h2>Personal Information</h2>
+        <div class="row">
+          <label>Full name<input id="fullName" /></label>
+          <label>Date of birth<input id="dob" type="date" /></label>
+        </div>
+        <div class="row">
+          <label>Address<input id="address" /></label>
+          <label>Phone number<input id="phone" /></label>
+        </div>
         <label>Email<input id="email" type="email" /></label>
 
         <h2>Emergency Contact</h2>
-        <label>Contact name<input id="ecName" /></label>
-        <label>Relationship<input id="ecRel" /></label>
-        <label>Phone<input id="ecPhone" /></label>
-        <label>Alternate phone<input id="ecAlt" /></label>
+        <div class="row">
+          <label>Contact name<input id="ecName" /></label>
+          <label>Relationship<input id="ecRel" /></label>
+        </div>
+        <div class="row">
+          <label>Phone<input id="ecPhone" /></label>
+          <label>Alternate phone<input id="ecAlt" /></label>
+        </div>
 
         <h2>Medical Information</h2>
-        <label>Blood type<select id="blood"><option value="">Select</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option><option>Unknown</option></select></label>
+        <div class="row">
+          <label>Blood type<select id="blood"><option value="">Select</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option><option>Unknown</option></select></label>
+          <label>Primary care physician<input id="pcp" placeholder="Name, phone"/></label>
+        </div>
         <label>Allergies<textarea id="allergies"></textarea></label>
         <label>Medications<textarea id="meds"></textarea></label>
         <label>Medical conditions<textarea id="conditions"></textarea></label>
-        <label>Primary care physician<input id="pcp" placeholder="Name, phone"/></label>
         <label>Specialist(s)<input id="specialists" placeholder="Name(s), phone(s)"/></label>
         <label>Past surgeries / history<textarea id="history"></textarea></label>
 
         <h2>Insurance & ID</h2>
-        <label>Insurance provider<input id="insProvider"/></label>
-        <label>Policy number<input id="policy"/></label>
-        <label>ID / Driver’s license<input id="dl"/></label>
-        <label>Preferred hospital<input id="hospital"/></label>
+        <div class="row">
+          <label>Insurance provider<input id="insProvider"/></label>
+          <label>Policy number<input id="policy"/></label>
+        </div>
+        <div class="row">
+          <label>ID / Driver’s license<input id="dl"/></label>
+          <label>Preferred hospital<input id="hospital"/></label>
+        </div>
 
         <h2>Directives & Other</h2>
-        <label>Advance directive / DNR<input id="dnr"/></label>
-        <label>Organ donor<select id="donor"><option value="">Select</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
+        <div class="row">
+          <label>Advance directive / DNR<input id="dnr"/></label>
+          <label>Organ donor<select id="donor"><option value="">Select</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
+        </div>
         <label>Special needs<textarea id="needs"></textarea></label>
         <label>Pets / dependents<textarea id="pets"></textarea></label>
         <label>Notes<textarea id="notes"></textarea></label>
@@ -76,6 +117,7 @@
   const VIEW_PASSWORD = "view123";
   const EDIT_PASSWORD = "edit123";
   const STORAGE_KEY = "ice_sheet";
+  const PHOTO_KEY = "ice_photo";
   let canEdit = false;
 
   const gate = document.getElementById('gate');
@@ -83,6 +125,11 @@
   const gateInput = document.getElementById('gateInput');
   const gateBtn = document.getElementById('gateBtn');
   const gateMsg = document.getElementById('gateMsg');
+
+  const photoPreview = document.getElementById('photoPreview');
+  const photoFile = document.getElementById('photoFile');
+  const photoClear = document.getElementById('photoClear');
+  const photoDownload = document.getElementById('photoDownload');
 
   const saveBtn = document.getElementById('saveBtn');
   const ids = ['fullName','dob','address','phone','email','ecName','ecRel','ecPhone','ecAlt','blood','allergies','meds','conditions','pcp','specialists','history','insProvider','policy','dl','hospital','dnr','donor','needs','pets','notes'];
@@ -95,6 +142,9 @@
       if(canEdit){ el.removeAttribute('disabled'); }
       else { el.setAttribute('disabled','disabled'); }
     });
+    // Photo controls visibility
+    photoFile.disabled = !canEdit;
+    photoClear.disabled = !canEdit;
     saveBtn.style.display = canEdit ? '' : 'none';
   }
 
@@ -113,18 +163,74 @@
   });
   gateInput.addEventListener('keydown',e=>{ if(e.key==='Enter'){ gateBtn.click(); }});
 
+  // ===== Save / Load data =====
   function save(){
     const data={}; ids.forEach(id=>data[id]=nodes[id].value);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   }
   function load(){
-    const raw = localStorage.getItem(STORAGE_KEY); if(!raw) return;
-    try{
-      const data = JSON.parse(raw);
-      ids.forEach(id=>{ if(data[id]) nodes[id].value=data[id]; });
-    }catch(e){}
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      try{
+        const data = JSON.parse(raw);
+        ids.forEach(id=>{ if(data[id]!==undefined) nodes[id].value=data[id]; });
+      }catch(e){}
+    }
+    const p = localStorage.getItem(PHOTO_KEY);
+    if(p){ photoPreview.src = p; } else { photoPreview.removeAttribute('src'); }
   }
+
   saveBtn.addEventListener('click',()=>{ if(canEdit){ save(); alert('Saved'); } });
+
+  // ===== Photo handling =====
+  photoFile.addEventListener('change', async (e)=>{
+    if(!canEdit) return;
+    const file = e.target.files && e.target.files[0];
+    if(!file) return;
+    try{
+      const dataUrl = await resizeToDataURL(file, 1024);
+      photoPreview.src = dataUrl;
+      localStorage.setItem(PHOTO_KEY, dataUrl);
+    }catch(err){ alert('Could not load image'); }
+  });
+
+  photoClear.addEventListener('click', (e)=>{
+    e.preventDefault(); if(!canEdit) return;
+    photoPreview.removeAttribute('src');
+    localStorage.removeItem(PHOTO_KEY);
+  });
+
+  photoDownload.addEventListener('click', (e)=>{
+    e.preventDefault();
+    const src = photoPreview.getAttribute('src');
+    if(!src){ alert('No photo to download'); return; }
+    const a = document.createElement('a');
+    a.href = src; a.download = 'ICE_photo.jpg'; a.click();
+  });
+
+  function resizeToDataURL(file, maxSide){
+    return new Promise((resolve, reject)=>{
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        const img = new Image();
+        img.onload = ()=>{
+          const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+          const w = Math.round(img.width * scale);
+          const h = Math.round(img.height * scale);
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          try{ resolve(canvas.toDataURL('image/jpeg', 0.85)); }
+          catch(err){ reject(err); }
+        };
+        img.onerror = reject;
+        img.src = reader.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
 })();
 </script>
 </body>
